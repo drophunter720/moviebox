@@ -1661,15 +1661,85 @@ function gwOpenGatewayBtn(btn) {
     });
 })();
 
-/* ── Gateway countdown ────────────────────────────────────────────── */
+/* Gateway countdown */
 document.addEventListener("DOMContentLoaded", function () {
     if (!window.location.pathname.includes("/p/gateway.html")) return;
 
+    function cleanGatewayPage() {
+        document.body.classList.add("gateway-page");
+        [
+            ".top-header",
+            ".side-menu",
+            ".sidebar-fade-right",
+            ".bottom-navbar",
+            ".mobile-sidebar",
+            ".sidebar-overlay",
+            ".bookmark-modal",
+            "#comment-section",
+            "footer"
+        ].forEach(function (selector) {
+            document.querySelectorAll(selector).forEach(function (el) {
+                el.remove();
+            });
+        });
+    }
+
+    function ensureGatewayMarkup() {
+        var comment = document.getElementById("comment-section");
+        var existing = document.getElementById("gw-outer");
+        if (existing) {
+            if (comment && comment.parentNode) comment.parentNode.insertBefore(existing, comment);
+            existing.style.display = "flex";
+            return;
+        }
+
+        var style = document.createElement("style");
+        style.id = "gw-style";
+        style.textContent = [
+            "body.gateway-page{background:#111!important;padding:0!important;overflow-x:hidden!important}",
+            "body.gateway-page .tmdb-section,body.gateway-page #details-content,body.gateway-page #player-content,body.gateway-page #library,body.gateway-page #about-us,body.gateway-page #privacy-policy,body.gateway-page #disclaimer{display:none!important}",
+            "#gw-outer{font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#111;margin:0;padding:1rem}",
+            ".gw-card{max-width:460px;width:94%;background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:2rem 1.75rem;text-align:center;color:#fff;margin:auto}",
+            ".gw-logo{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#666;margin-bottom:1rem}",
+            ".gw-badge{display:inline-block;font-size:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 10px;letter-spacing:1px;color:#888;margin-bottom:1rem}",
+            ".gw-title{font-size:20px;font-weight:600;margin-bottom:.3rem}",
+            ".gw-sub{font-size:13px;color:#888;margin-bottom:1.5rem}",
+            ".gw-ring{width:100px;height:100px;margin:0 auto 1.5rem;position:relative}",
+            ".gw-ring svg{width:100px;height:100px;transform:rotate(-90deg)}",
+            ".gw-ring circle{fill:none;stroke-width:7}",
+            ".gw-ring .bg{stroke:rgba(255,255,255,.08)}",
+            ".gw-ring .fg{stroke:#e85d04;stroke-linecap:round;stroke-dasharray:260;stroke-dashoffset:260;transition:stroke-dashoffset 1s linear}",
+            ".gw-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:600}",
+            ".gw-steps{background:rgba(255,255,255,.04);border-radius:10px;padding:.9rem 1rem;margin:1rem 0;text-align:left}",
+            ".gw-step{display:flex;align-items:center;gap:10px;font-size:13px;color:#888;padding:5px 0;transition:color .4s}",
+            ".gw-step.done{color:#fff}",
+            ".gw-step .ic{font-size:16px;color:#e85d04;width:20px;text-align:center;transition:color .4s}",
+            ".gw-step.done .ic{color:#4caf50}",
+            ".gw-msg{font-size:13px;color:#888;margin-bottom:1.2rem;min-height:18px}",
+            ".gw-btn{display:inline-flex;align-items:center;gap:8px;background:#e85d04;color:#fff;border:none;padding:13px 34px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;opacity:.3;pointer-events:none;transition:opacity .3s}",
+            ".gw-btn.ready{opacity:1;pointer-events:auto;animation:gw-pulse 1.6s infinite}",
+            "@keyframes gw-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}",
+            ".gw-lock{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;color:#555;margin-top:1rem}",
+            "@media(max-width:768px){#gw-outer{min-height:100vh}}"
+        ].join("");
+        document.head.appendChild(style);
+
+        var wrap = document.createElement("div");
+        wrap.id = "gw-outer";
+        wrap.innerHTML = '<div class="gw-card"><div class="gw-logo">VidBox</div><div class="gw-badge">SECURE GATEWAY</div><div class="gw-title" id="gw-t">Verifying...</div><div class="gw-sub" id="gw-s">Preparing your stream</div><div class="gw-ring"><svg viewBox="0 0 90 90"><circle class="bg" cx="45" cy="45" r="41"></circle><circle class="fg" id="gw-c" cx="45" cy="45" r="41"></circle></svg><div class="gw-num" id="gw-n">10</div></div><div class="gw-steps"><div class="gw-step" id="s1"><span class="ic">&#9679;</span><span>Verifying access token</span></div><div class="gw-step" id="s2"><span class="ic">&#9679;</span><span>Generating secure stream link</span></div><div class="gw-step" id="s3"><span class="ic">&#9679;</span><span>Scroll down and tap Continue</span></div></div><div class="gw-msg" id="gw-m">Please wait while we prepare your stream...</div><button class="gw-btn" id="gw-btn">&#9654; Continue to Stream</button><div class="gw-lock">&#128274; Unique link &middot; Expires after use</div></div>';
+
+        if (comment && comment.parentNode) comment.parentNode.insertBefore(wrap, comment);
+        else document.body.insertBefore(wrap, document.body.firstChild);
+    }
+
+    cleanGatewayPage();
+    ensureGatewayMarkup();
+
     var cd = 10, done = false, dest = "", total = 258;
     var circle = document.getElementById("gw-c");
-    var numEl  = document.getElementById("gw-n");
-    var msgEl  = document.getElementById("gw-m");
-    var btn    = document.getElementById("gw-btn");
+    var numEl = document.getElementById("gw-n");
+    var msgEl = document.getElementById("gw-m");
+    var btn = document.getElementById("gw-btn");
 
     if (!circle || !numEl || !msgEl || !btn) return;
 
