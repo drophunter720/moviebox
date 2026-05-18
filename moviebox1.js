@@ -1,12 +1,16 @@
 function gwOpenGateway(id, type, title, season, episode) {
+    var token = Math.random().toString(36).slice(2) + Date.now().toString(36);
     var payload = {
         id: id,
         type: type,
         title: title,
         s: parseInt(season) || 1,
         e: parseInt(episode) || 1,
-        _r: Math.random().toString(36).slice(2) + Date.now().toString(36),
+        _r: token,
     };
+    try {
+        localStorage.setItem("gw_token_" + token, JSON.stringify({ id: String(id), type: String(type), createdAt: Date.now() }));
+    } catch (e) {}
     var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
     var gwUrl = "/p/gateway.html?t=" + encoded;
     window.open(gwUrl, "_blank");
@@ -1715,7 +1719,7 @@ document.addEventListener("DOMContentLoaded", function () {
             ".gw-step.done{color:#fff}",
             ".gw-step .ic{font-size:16px;color:#e85d04;width:20px;text-align:center;transition:color .4s}",
             ".gw-step.done .ic{color:#4caf50}",
-            ".gw-msg{font-size:13px;color:#888;margin-bottom:1.2rem;min-height:18px}",
+            ".gw-msg{display:none}",
             ".gw-btn{display:inline-flex;align-items:center;gap:8px;background:#e85d04;color:#fff;border:none;padding:13px 34px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;opacity:.3;pointer-events:none;transition:opacity .3s}",
             ".gw-btn.ready{opacity:1;pointer-events:auto;animation:gw-pulse 1.6s infinite}",
             "@keyframes gw-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}",
@@ -1726,7 +1730,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var wrap = document.createElement("div");
         wrap.id = "gw-outer";
-        wrap.innerHTML = '<div class="gw-card"><div class="gw-logo">VidBox</div><div class="gw-badge">SECURE GATEWAY</div><div class="gw-title" id="gw-t">Verifying...</div><div class="gw-sub" id="gw-s">Preparing your stream</div><div class="gw-ring"><svg viewBox="0 0 90 90"><circle class="bg" cx="45" cy="45" r="41"></circle><circle class="fg" id="gw-c" cx="45" cy="45" r="41"></circle></svg><div class="gw-num" id="gw-n">10</div></div><div class="gw-steps"><div class="gw-step" id="s1"><span class="ic">&#9679;</span><span>Verifying access token</span></div><div class="gw-step" id="s2"><span class="ic">&#9679;</span><span>Generating secure stream link</span></div><div class="gw-step" id="s3"><span class="ic">&#9679;</span><span>Scroll down and tap Continue</span></div></div><div class="gw-msg" id="gw-m">Please wait while we prepare your stream...</div><button class="gw-btn" id="gw-btn">&#9654; Continue to Stream</button><div class="gw-lock">&#128274; Unique link &middot; Expires after use</div></div>';
+        wrap.innerHTML = '<div class="gw-card"><div class="gw-logo">VidBox</div><div class="gw-badge">SECURE GATEWAY</div><div class="gw-title" id="gw-t">Verifying...</div><div class="gw-sub" id="gw-s">Preparing your stream</div><div class="gw-ring"><svg viewBox="0 0 90 90"><circle class="bg" cx="45" cy="45" r="41"></circle><circle class="fg" id="gw-c" cx="45" cy="45" r="41"></circle></svg><div class="gw-num" id="gw-n">10</div></div><div class="gw-steps"><div class="gw-step" id="s1"><span class="ic">&#9679;</span><span>Verifying access token</span></div><div class="gw-step" id="s2"><span class="ic">&#9679;</span><span>Generating secure stream link</span></div><div class="gw-step" id="s3"><span class="ic">&#9679;</span><span>Scroll down and tap Continue</span></div></div><div class="gw-msg" id="gw-m">Please wait while we prepare your stream...</div><button class="gw-btn" id="gw-btn"><i class="bi bi-box-arrow-up-right"></i> Click here to continue</button><div class="gw-lock">&#128274; Unique link &middot; Expires after use</div></div>';
 
         if (comment && comment.parentNode) comment.parentNode.insertBefore(wrap, comment);
         else document.body.insertBefore(wrap, document.body.firstChild);
@@ -1751,9 +1755,18 @@ document.addEventListener("DOMContentLoaded", function () {
             return JSON.parse(decodeURIComponent(escape(atob(r))));
         } catch (e) { return null; }
     }
+    function validGatewayData(data) {
+        try {
+            if (!data || !data._r) return false;
+            var saved = JSON.parse(localStorage.getItem("gw_token_" + data._r) || "null");
+            return !!saved && saved.id === String(data.id) && saved.type === String(data.type);
+        } catch (e) {
+            return false;
+        }
+    }
 
     var data = dec();
-    if (data) {
+    if (validGatewayData(data)) {
         var tEl = document.getElementById("gw-t");
         var sEl = document.getElementById("gw-s");
         if (tEl) tEl.textContent = data.title || "Loading...";
@@ -1763,6 +1776,10 @@ document.addEventListener("DOMContentLoaded", function () {
         dest = data.type === "movie"
             ? "https://vidvault.ru/movie/" + data.id
             : "https://vidvault.ru/tv/" + data.id + "/" + (data.s || 1) + "/" + (data.e || 1);
+    } else {
+        var invalidTitle = document.getElementById("gw-t");
+        if (invalidTitle) invalidTitle.textContent = "Invalid or expired link";
+        msgEl.textContent = "Please go back and click again.";
     }
 
     function mark(id, ok) {
@@ -1779,8 +1796,8 @@ document.addEventListener("DOMContentLoaded", function () {
             numEl.textContent = "\u2713";
             circle.style.strokeDashoffset = "0";
             circle.style.stroke = "#4caf50";
-            msgEl.textContent = "Scroll down and tap Continue to start watching!";
-            btn.classList.add("ready");
+            msgEl.textContent = dest ? "" : "This gateway link is invalid.";
+            if (dest) btn.classList.add("ready");
             mark("s3", true);
             return;
         }
@@ -1793,6 +1810,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     btn.addEventListener("click", function () {
         if (!done || !dest) return;
+        if (data && data._r) localStorage.removeItem("gw_token_" + data._r);
         window.location.href = dest;
     });
 
