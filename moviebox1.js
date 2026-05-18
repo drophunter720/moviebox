@@ -638,10 +638,18 @@ function gwOpenGatewayBtn(btn) {
                         if (
                             ((p.innerHTML = ""),
                             ((b || (u || []).length <= n ? u : (u || []).slice(0, n)) || []).forEach((C) => {
-                                let t = document.createElement("a");
+                                let t = document.createElement("button");
                                 (t.className = "btn episode-btn"),
+                                    (t.type = "button"),
                                     (t.textContent = String(C.episode_number).padStart(2, "0")),
-                                    (t.href = `/p/player.html?id=${x}&type=tv&season=${c}&ep=${C.episode_number}`),
+                                    (t.onclick = () => {
+                                        let title =
+                                            document.getElementById("gw-watch-btn")?.dataset.title ||
+                                            document.querySelector(".info h1")?.dataset.originalTitle ||
+                                            document.querySelector(".info h1")?.innerText ||
+                                            "Untitled";
+                                        gwOpenGateway(x, "tv", title, c, C.episode_number);
+                                    }),
                                     p.appendChild(t);
                             }),
                             (u || []).length > n)
