@@ -1676,6 +1676,7 @@ function gwOpenGatewayBtn(btn) {
 /* Gateway countdown */
 document.addEventListener("DOMContentLoaded", function () {
     if (!window.location.pathname.includes("/p/gateway.html")) return;
+    if (new URLSearchParams(window.location.search).get("stage") === "2") return;
 
     function cleanGatewayPage() {
         document.body.classList.add("gateway-page");
@@ -1781,9 +1782,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (sEl) sEl.textContent = data.type === "movie"
             ? "Movie"
             : "TV Series \u00b7 Season " + (data.s || 1) + " Episode " + (data.e || 1);
-        dest = data.type === "movie"
-            ? "https://vidvault.ru/movie/" + data.id
-            : "https://vidvault.ru/tv/" + data.id + "/" + (data.s || 1) + "/" + (data.e || 1);
+        dest = "/p/gateway.html?stage=2&t=" + encodeURIComponent(gp("t") || "");
     } else {
         var invalidTitle = document.getElementById("gw-t");
         if (invalidTitle) invalidTitle.textContent = "Invalid or expired link";
@@ -1818,7 +1817,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     btn.addEventListener("click", function () {
         if (!done || !dest) return;
-        if (data && data._r) localStorage.removeItem("gw_token_" + data._r);
         window.location.href = dest;
     });
 
