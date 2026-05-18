@@ -1660,3 +1660,72 @@ function gwOpenGatewayBtn(btn) {
         })();
     });
 })();
+
+/* ── Gateway countdown ────────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", function () {
+    if (!window.location.pathname.includes("/p/gateway.html")) return;
+
+    var cd = 10, done = false, dest = "", total = 258;
+    var circle = document.getElementById("gw-c");
+    var numEl  = document.getElementById("gw-n");
+    var msgEl  = document.getElementById("gw-m");
+    var btn    = document.getElementById("gw-btn");
+
+    if (!circle || !numEl || !msgEl || !btn) return;
+
+    function gp(k) { return new URLSearchParams(window.location.search).get(k); }
+    function dec() {
+        try {
+            var r = gp("t");
+            if (!r) return null;
+            return JSON.parse(decodeURIComponent(escape(atob(r))));
+        } catch (e) { return null; }
+    }
+
+    var data = dec();
+    if (data) {
+        var tEl = document.getElementById("gw-t");
+        var sEl = document.getElementById("gw-s");
+        if (tEl) tEl.textContent = data.title || "Loading...";
+        if (sEl) sEl.textContent = data.type === "movie"
+            ? "Movie"
+            : "TV Series \u00b7 Season " + (data.s || 1) + " Episode " + (data.e || 1);
+        dest = data.type === "movie"
+            ? "https://vidvault.ru/movie/" + data.id
+            : "https://vidvault.ru/tv/" + data.id + "/" + (data.s || 1) + "/" + (data.e || 1);
+    }
+
+    function mark(id, ok) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add("done");
+        var ic = el.querySelector(".ic");
+        if (ic) { ic.innerHTML = ok ? "&#10003;" : "&#10007;"; ic.style.color = ok ? "#4caf50" : "#e74c3c"; }
+    }
+
+    function tick() {
+        if (cd <= 0) {
+            clearInterval(tmr); done = true;
+            numEl.textContent = "\u2713";
+            circle.style.strokeDashoffset = "0";
+            circle.style.stroke = "#4caf50";
+            msgEl.textContent = "Scroll down and tap Continue to start watching!";
+            btn.classList.add("ready");
+            mark("s3", true);
+            return;
+        }
+        circle.style.strokeDashoffset = total - (total * ((10 - cd) / 10));
+        numEl.textContent = cd;
+        if (cd === 8) mark("s1", true);
+        if (cd === 5) mark("s2", true);
+        cd--;
+    }
+
+    btn.addEventListener("click", function () {
+        if (!done || !dest) return;
+        window.location.href = dest;
+    });
+
+    var tmr = setInterval(tick, 1000);
+    tick();
+});
