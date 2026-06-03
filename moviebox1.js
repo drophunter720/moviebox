@@ -1680,12 +1680,8 @@ function gwOpenGatewayBtn(btn) {
 /* Gateway countdown */
 document.addEventListener("DOMContentLoaded", function () {
     if (!window.location.pathname.includes("/p/gateway.html")) return;
-    var gwStage = new URLSearchParams(window.location.search).get("stage");
-    try {
-        if (sessionStorage.getItem("gw_view") === "providers") return;
-    } catch (e) {}
-    if (gwStage === "2" || gwStage === "3") return;
-    if (document.getElementById("gw-providers") || document.getElementById("gw-article")) return;
+    var gatewayStage = new URLSearchParams(window.location.search).get("stage");
+    if (gatewayStage === "2" || gatewayStage === "3") return;
 
     function cleanGatewayPage() {
         document.body.classList.add("gateway-page");
