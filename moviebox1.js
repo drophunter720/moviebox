@@ -1680,7 +1680,8 @@ function gwOpenGatewayBtn(btn) {
 /* Gateway countdown */
 document.addEventListener("DOMContentLoaded", function () {
     if (!window.location.pathname.includes("/p/gateway.html")) return;
-    if (new URLSearchParams(window.location.search).get("stage") === "2") return;
+    var gwStage = new URLSearchParams(window.location.search).get("stage");
+    if (gwStage === "2" || gwStage === "3") return;
 
     function cleanGatewayPage() {
         document.body.classList.add("gateway-page");
